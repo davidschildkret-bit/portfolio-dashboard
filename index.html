@@ -13,7 +13,10 @@ body {
   background:#0f1115;
   color:white;
 }
-h1{text-align:center;margin-bottom:10px;}
+h1{
+  text-align:center;
+  margin-bottom:10px;
+}
 #total{
   text-align:center;
   font-size:2em;
@@ -57,45 +60,36 @@ input{
 <div class="grid">
 
 <div class="card">
-  <div><strong>NVDA</strong></div>
-  <div id="price-NVDA"></div>
-  <div id="change-NVDA"></div>
+  <strong>NVDA</strong>
+  <div id="pos-NVDA"></div>
   Shares:<br>
   <input type="number" min="0" step="any" onchange="updateShares('NVDA',this.value)">
-  <div id="pos-NVDA"></div>
 </div>
 
 <div class="card">
-  <div><strong>MSFT</strong></div>
-  <div id="price-MSFT"></div>
-  <div id="change-MSFT"></div>
+  <strong>MSFT</strong>
+  <div id="pos-MSFT"></div>
   Shares:<br>
   <input type="number" min="0" step="any" onchange="updateShares('MSFT',this.value)">
-  <div id="pos-MSFT"></div>
 </div>
 
 <div class="card">
-  <div><strong>AMD</strong></div>
-  <div id="price-AMD"></div>
-  <div id="change-AMD"></div>
+  <strong>AMD</strong>
+  <div id="pos-AMD"></div>
   Shares:<br>
   <input type="number" min="0" step="any" onchange="updateShares('AMD',this.value)">
-  <div id="pos-AMD"></div>
 </div>
 
 <div class="card">
-  <div><strong>GCOW</strong></div>
-  <div id="price-GCOW"></div>
-  <div id="change-GCOW"></div>
+  <strong>GCOW</strong>
+  <div id="pos-GCOW"></div>
   Shares:<br>
   <input type="number" min="0" step="any" onchange="updateShares('GCOW',this.value)">
-  <div id="pos-GCOW"></div>
 </div>
 
 </div>
 
 <div class="chart">
-<!-- TradingView Ticker Tape -->
 <script src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
 {
   "symbols": [
@@ -146,9 +140,6 @@ function calculate(){
   dailyEl.className = daily >= 0 ? "green" : "red";
 }
 
-// Pull visible prices from TradingView ticker tape
-// (Lightweight scraping of DOM — works without API)
-
 function extractPrices(){
   const items = document.querySelectorAll(".tv-ticker-item");
   items.forEach(item=>{
@@ -169,7 +160,7 @@ function extractPrices(){
   calculate();
 }
 
-setInterval(extractPrices, 5000);
+setInterval(extractPrices, 4000);
 </script>
 
 </body>
