@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Dashboard</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1115;
+    color: white;
+    padding: 15px;
+}
+
+h1 {
+    text-align: center;
+}
+
+#portfolioTotal {
+    text-align: center;
+    font-size: 2em;
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+#portfolioChange {
+    text-align: center;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.card {
+    background: #1a1d24;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.symbol { font-weight: bold; font-size: 1.2em; }
+.price { font-size: 1.4em; margin: 5px 0; }
+.green { color: #00c853; }
+.red { color: #ff5252; }
+
+canvas {
+    margin-top: 30px;
+    background: #1a1d24;
+    border-radius: 12px;
+    padding: 10px;
+}
+input {
+    width: 80px;
+    padding: 4px;
+    border-radius: 6px;
+    border: none;
+    margin-top: 6px;
+}
+</style>
+</head>
+<body>
+
+<h1>📊 Portfolio Dashboard</h1>
+<div id="portfolioTotal">Loading...</div>
+<div id="portfolioChange"></div>
+
+<div class="grid" id="stockGrid"></div>
+
+<canvas id="portfolioChart" height="120"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const symbols = ["GCOW","NVDA","MSFT","AMD"];
+const shares = { GCOW:0, NVDA:0, MSFT:0, AMD:0 };
+const apiKey = "demo";
+
+let latestData = [];
+let chart;
+
+function createCard(symbol) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+        <div class="symbol">${symbol}</div>
+        <div class="price" id="price-${symbol}">$--</div>
+        <div id="change-${symbol}"></div>
+        <div>
+            Shares:<br>
+            <input type="number" min="0" step="any"
+            onchange="updateShares('${symbol}', this.value)">
+        </div>
+    `;
+    return card;
+}
+
+function updateShares(symbol, value) {
+    shares[symbol] = parseFloat(value) || 0;
+    calculatePortfolio();
+}
+
+async function fetchPrices() {
+    const url = `https://financialmodelingprep.com/api/v3/quote/${symbols.join(",")}?apikey=${apiKey}`;
+    const response = await fetch(url);
+    latestData = await response.json();
+
+    latestData.forEach(stock => {
+        const priceEl = document.getElementById(`price-${stock.symbol}`);
+        priceEl.textContent = `$${stock.price.toFixed(2)}`;
+
+        const changeEl = document.getElementById(`change-${stock.symbol}`);
+        const dailyValueChange =
+            shares[stock.symbol] * stock.change;
+
+        changeEl.textContent =
+            `Day: ${stock.change.toFixed(2)} (${stock.changesPercentage.toFixed(2)}%) | ` +
+            `Position: $${dailyValueChange.toFixed(2)}`;
+
+        changeEl.className = stock.change >= 0 ? "green" : "red";
+    });
+
+    calculatePortfolio();
+    updateChart();
+}
+
+function calculatePortfolio() {
+    let total = 0;
+    let totalDaily = 0;
+
+    latestData.forEach(stock => {
+        total += shares[stock.symbol] * stock.price;
+        totalDaily += shares[stock.symbol] * stock.change;
+    });
+
+    document.getElementById("portfolioTotal")
+        .textContent = `Total Value: $${total.toFixed(2)}`;
+
+    const changeEl = document.getElementById("portfolioChange");
+    changeEl.textContent =
+        `Daily Change: $${totalDaily.toFixed(2)}`;
+    changeEl.className = totalDaily >= 0 ? "green" : "red";
+}
+
+async function updateChart() {
+    const url = `https://financialmodelingprep.com/api/v3/historical-chart/5min/NVDA?apikey=${apiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const labels = data.slice(0, 60).reverse().map(d => d.date.slice(11,16));
+    const prices = data.slice(0, 60).reverse().map(d => d.close);
+
+    if (!chart) {
+        chart = new Chart(document.getElementById("portfolioChart"), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "NVDA Intraday (proxy)",
+                    data: prices,
+                    borderColor: "#37a6ef",
+                    borderWidth: 2,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: "white" } } },
+                scales: {
+                    x: { ticks: { color: "white" } },
+                    y: { ticks: { color: "white" } }
+                }
+            }
+        });
+    } else {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = prices;
+        chart.update();
+    }
+}
+
+symbols.forEach(symbol => {
+    document.getElementById("stockGrid")
+        .appendChild(createCard(symbol));
+});
+
+fetchPrices();
+setInterval(fetchPrices, 30000);
+</script>
+
+</body>
+</html>
