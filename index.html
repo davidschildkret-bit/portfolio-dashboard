@@ -90,7 +90,7 @@ function updateShares(sym,val){
 async function fetchPrices(){
   try{
     const response=await fetch(
-      "https://financialmodelingprep.com/api/v3/quote/"+symbols.join(",")+"?apikey=demo"
+      "https://financialmodelingprep.com/api/v3/quote/"+symbols.join(",")+"?apikey=OVbA9ny6a3JrpsTfoPqdHTlFnbxJbqn7"
     );
     const data=await response.json();
     if(!Array.isArray(data)) throw new Error("API blocked");
