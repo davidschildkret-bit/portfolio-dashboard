@@ -51,7 +51,7 @@ input {
 const symbols = ["NVDA","MSFT","AMD","GCOW"];
 const shares = {};
 const prices = {};
-const changes = {};
+const prevClose = {};
 
 symbols.forEach(sym => shares[sym] = 0);
 
@@ -86,7 +86,8 @@ function calculate() {
   symbols.forEach(sym => {
     if (prices[sym]) {
       const position = shares[sym] * prices[sym];
-      const dayMove = shares[sym] * changes[sym];
+      const changePerShare = prices[sym] - prevClose[sym];
+      const dayMove = shares[sym] * changePerShare;
 
       total += position;
       daily += dayMove;
@@ -107,33 +108,34 @@ function calculate() {
 
 async function fetchPrices() {
   try {
-    const response = await fetch(
-      "https://api.allorigins.win/raw?url=" +
-      encodeURIComponent(
-        "https://query1.finance.yahoo.com/v7/finance/quote?symbols=" +
-        symbols.join(",")
-      )
-    );
+    for (let sym of symbols) {
+      const response = await fetch(
+        `https://stooq.com/q/l/?s=${sym.toLowerCase()}.us&i=d`
+      );
+      const text = await response.text();
+      const parts = text.split("\n")[1].split(",");
 
-    const data = await response.json();
-    const results = data.quoteResponse.result;
+      const close = parseFloat(parts[6]);      // Close
+      const open = parseFloat(parts[3]);       // Open
 
-    results.forEach(stock => {
-      prices[stock.symbol] = stock.regularMarketPrice;
-      changes[stock.symbol] = stock.regularMarketChange;
+      prices[sym] = close;
+      prevClose[sym] = open;
 
-      document.getElementById(`price-${stock.symbol}`).innerText =
-        "$" + stock.regularMarketPrice.toFixed(2);
+      document.getElementById(`price-${sym}`).innerText =
+        "$" + close.toFixed(2);
 
-      const changeEl = document.getElementById(`change-${stock.symbol}`);
+      const change = close - open;
+      const changePct = (change / open) * 100;
+
+      const changeEl = document.getElementById(`change-${sym}`);
       changeEl.innerText =
-        stock.regularMarketChange.toFixed(2) +
+        change.toFixed(2) +
         " (" +
-        stock.regularMarketChangePercent.toFixed(2) +
+        changePct.toFixed(2) +
         "%)";
       changeEl.className =
-        stock.regularMarketChange >= 0 ? "green" : "red";
-    });
+        change >= 0 ? "green" : "red";
+    }
 
     calculate();
 
@@ -145,7 +147,7 @@ async function fetchPrices() {
 
 createCards();
 fetchPrices();
-setInterval(fetchPrices, 30000);
+setInterval(fetchPrices, 60000);
 
 </script>
 
